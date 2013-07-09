@@ -10,7 +10,7 @@ pygments: true
 # so be sure to set them if your theme uses them.
 #
 title : NULL
-tagline: Site Tagline
+tagline: NULL
 author :
   name : Slipper
   email : slipper.alive@gmail.com
