@@ -93,7 +93,7 @@ openid_redirect($service['uri'], $ramparts);
 这里用到了修改过的常量`OPENID_DH_DEFAULT_GEN`。
 drupal_map_assoc()返回的是数组，所以在redirect过程中会被强转成字符串"Array"，最后在跳转的时候会出错。
 而这个[drupal\_map\_assoc()](https://api.drupal.org/api/drupal/includes%21common.inc/function/drupal_map_assoc/7)则暗藏玄机。
-根据官方文档，drupal_map_assoc()会把第一个参数$array中的每个参数依次传入第二个参数$callable执行并返回一个数组。
+根据官方文档，drupal\_map\_assoc()会把第一个参数$array中的每个参数依次传入第二个参数$callable执行并返回一个数组。
 这里藏着一个命令执行后门啊。。。。
 只要`is_callable($user_enc)`就能直接执行`$user_enc($host)`。
 而`$user_enc`是从`$user * OPENID_DH_DEFAULT_GEN`解出来的。
@@ -122,7 +122,7 @@ php > echo _openid_dh_base64_to_long('exec')/OPENID_DH_DEFAULT_GEN ."\n";
 93802
 ```
 
-因为这里的is_callable是不区分大小写的，本来我还以为后门作者刻意选择了大小写混用的函数名，本来差点要写程序暴搜的。还好偶然发现exec正好符合要求。^_^
+因为这里的is\_callable是不区分大小写的，本来我还以为后门作者刻意选择了大小写混用的函数名，本来差点要写程序暴搜的。还好偶然发现exec正好符合要求。^\_^
 
 **如果以后要用这种方法做后门，记得一个有大因子的大小写混用的函数名哦。**
 
